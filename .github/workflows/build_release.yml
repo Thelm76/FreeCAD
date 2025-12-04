@@ -68,11 +68,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - { target: linux-64, os: ubuntu-22.04 }
-          - { target: linux-arm64, os: ubuntu-22.04-arm }
-          - { target: osx-64, os: macos-15-intel }
           - { target: osx-arm64, os: macos-latest }
-          - { target: win-64, os: windows-latest }
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
@@ -187,6 +183,6 @@ jobs:
         uses: actions/upload-artifact@v5.0.0
         with:
           # A file, directory or wildcard pattern that describes what to upload
-          path: /www/builds/AstoCAD_*.dmg
+          path: package/rattler-build/AstoCAD_*.dmg
           # The desired behavior if no files are found using the provided path.
      
