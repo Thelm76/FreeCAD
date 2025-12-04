@@ -183,87 +183,10 @@ jobs:
       #     security delete-keychain $RUNNER_TEMP/app-signing.keychain-db
       #     rm ~/Library/MobileDevice/Provisioning\ Profiles/build_pp.mobileprovision
 
-      # --- Add AstoCAD FTP Upload ---
-      - name: Upload binaries to AstoCAD server
-        if: github.event_name != 'pull_request'
-        shell: bash
-        env:
-          FTP_HOST: ${{ secrets.FTP_HOST }}
-          FTP_USER: ${{ secrets.FTP_USER }}
-          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-        run: |
-          # 1. Move to the rattler-build root
-          cd package/rattler-build
-          
-          # 2. Determine OS-specific Upload Logic and CD into specific folders
-          if [[ "$RUNNER_OS" == "Linux" ]]; then
-            echo "Installing LFTP for Linux..."
-            sudo apt-get update -qq && sudo apt-get install -y lftp
-            
-            cd linux
-
-            lftp -e "
-            set ssl:verify-certificate no;
-            open $FTP_HOST;
-            user $FTP_USER $FTP_PASSWORD;
-            cd /www/builds/;
-            mput AstoCAD_*.AppImage AstoCAD_*.txt;
-            bye
-            "
-          
-          elif [[ "$RUNNER_OS" == "macOS" ]]; then
-            echo "Installing LFTP for macOS..."
-            brew install lftp
-            
-            cd osx
-
-            lftp -e "
-            set ssl:verify-certificate no;
-            open $FTP_HOST;
-            user $FTP_USER $FTP_PASSWORD;
-            cd /www/builds/;
-            mput AstoCAD_*.dmg AstoCAD_*.txt;
-            bye
-            "
-            
-          elif [[ "$RUNNER_OS" == "Windows" ]]; then
-            echo "Uploading via PowerShell for Windows..."
-
-            # 1. Enter the windows directory (as fixed previously)
-            cd windows
-
-            # 2. Run PowerShell with escaped variables (\$)
-            pwsh -Command "
-            \$files = Get-ChildItem -Path . -Include 'AstoCAD_*.7z', 'AstoCAD_*.exe', 'AstoCAD_*.txt' -Recurse -Depth 0
-
-            if (\$files.Count -eq 0) {
-                Write-Error 'No files found to upload in windows directory'
-                exit 1
-            }
-
-            foreach (\$file in \$files) {
-              \$filename = \$file.Name
-              Write-Host \"Uploading \$filename...\"
-              try {
-                # Use env vars defined in the workflow (FTP_HOST, FTP_USER, etc.)
-                \$ftpUri = \"ftp://\" + \$env:FTP_HOST + \"/www/builds/\" + \$filename
-
-                \$ftpRequest = [System.Net.FtpWebRequest]::Create(\$ftpUri)
-                \$ftpRequest.Credentials = New-Object System.Net.NetworkCredential(\$env:FTP_USER, \$env:FTP_PASSWORD)
-                \$ftpRequest.Method = [System.Net.WebRequestMethods+Ftp]::UploadFile
-                \$ftpRequest.UseBinary = \$true
-                \$ftpRequest.KeepAlive = \$false
-                  
-                \$content = [System.IO.File]::ReadAllBytes(\$file.FullName)
-                \$ftpStream = \$ftpRequest.GetRequestStream()
-                \$ftpStream.Write(\$content, 0, \$content.Length)
-                \$ftpStream.Close()
-                \$ftpRequest.GetResponse().Close()
-                Write-Host \"Successfully uploaded \$filename\"
-              } catch {
-                Write-Error \"Failed to upload \$filename : \$_\"
-                exit 1
-              }
-            }
-            "
-          fi
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v5.0.0
+        with:
+          # A file, directory or wildcard pattern that describes what to upload
+          path: /www/builds/AstoCAD_*.dmg
+          # The desired behavior if no files are found using the provided path.
+     
