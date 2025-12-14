@@ -68,8 +68,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - { target: osx-arm64, os: macos-latest, path: osx }
-          - { target: win-64, os: windows-latest, path: windows }
+          - { target: osx-arm64, os: macos-latest, path: osx, extension: dmg }
+          - { target: win-64, os: windows-latest, path: windows,  extension: exe }
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
@@ -186,6 +186,6 @@ jobs:
           name: ${{ matrix.os }}
           # A file, directory or wildcard pattern that describes what to upload
           path: |
-            package/rattler-build/${{ matrix.path }}/AstoCAD_*.*
+            package/rattler-build/${{ matrix.path }}/AstoCAD_*.${{ matrix.extension }}
           # The desired behavior if no files are found using the provided path.
      
